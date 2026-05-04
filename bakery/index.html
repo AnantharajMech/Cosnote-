@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Famous Bakery | Pro Manager</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Hind:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        :root {
+            --bg: #020617; --card: #0f172a; --primary: #6366f1; --success: #10b981;
+            --danger: #ef4444; --text: #f8fafc; --dim: #94a3b8; --border: #1e293b;
+            --unicorn-grad: linear-gradient(45deg, #f093fb 0%, #f5576c 50%, #4facfe 100%);
+        }
+
+        body { margin: 0; font-family: 'Inter', 'Hind', sans-serif; background-color: var(--bg); color: var(--text); overflow-x: hidden; }
+        .container { width: 100%; max-width: 480px; margin: auto; padding-bottom: 60px; }
+
+        /* Auth & Popups */
+        #authScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .unicorn-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20000; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .unicorn-content { background: var(--card); width: 85%; max-width: 350px; padding: 30px; border-radius: 30px; border: 2px solid transparent; background-image: linear-gradient(var(--card), var(--card)), var(--unicorn-grad); background-origin: border-box; background-clip: padding-box, border-box; box-shadow: 0 0 30px rgba(240, 147, 251, 0.3); animation: pop 0.3s ease-out; }
+        @keyframes pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* UI Elements */
+        .header { padding: 40px 20px; text-align: center; background: linear-gradient(180deg, #1e1b4b 0%, var(--bg) 100%); }
+        .header h1 { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: 2px; }
+        .header h3 { color: var(--primary); letter-spacing: 5px; font-size: 14px; margin: 5px 0; }
+
+        .card { background: var(--card); margin: 0 15px 20px; padding: 20px; border-radius: 24px; border: 1px solid var(--border); }
+        input, select { width: 100%; background: #020617; border: 1px solid var(--border); padding: 15px; border-radius: 12px; color: white; margin-bottom: 10px; box-sizing: border-box; font-size: 15px; outline: none; }
+        
+        button { width: 100%; border: none; padding: 16px; border-radius: 15px; font-weight: 700; cursor: pointer; margin-bottom: 10px; transition: 0.3s; font-size: 14px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-unicorn { background: var(--unicorn-grad); color: white; }
+        .btn-outline { background: transparent; color: var(--dim); border: 1px solid var(--border); }
+
+        /* Badges */
+        .badge { font-size: 9px; padding: 2px 6px; border-radius: 5px; font-weight: 700; text-transform: uppercase; margin-left: 5px; }
+        .badge-income { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .badge-outcome { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .badge-mode { background: #1e293b; color: var(--primary); }
+
+        /* Staff UI */
+        .staff-box { background: #020617; padding: 15px; border-radius: 20px; margin-bottom: 12px; border: 1px solid var(--border); }
+        .att-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .att-btn { padding: 10px; border-radius: 10px; font-size: 11px; text-align: center; background: #1e293b; color: var(--dim); cursor: pointer; }
+        .att-btn.active { background: var(--primary); color: white; }
+
+        /* Loader */
+        #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2,6,23,0.95); z-index: 50000; flex-direction: column; align-items: center; justify-content: center; }
+        .spin { width: 40px; height: 40px; border: 4px solid #1e293b; border-top: 4px solid var(--primary); border-radius: 50%; animation: s 1s linear infinite; }
+        @keyframes s { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div id="loader"><div class="spin"></div><p style="margin-top:15px; color:var(--primary);">Processing...</p></div>
+
+<div id="authScreen">
+    <h1 style="color: white; font-size: 32px; margin-bottom: 0;">FAMOUS BAKERY</h1>
+    <p style="color: #6366f1; letter-spacing: 5px; margin-bottom: 40px; font-weight: 600;">EDAPPADI</p>
+    <div style="width: 85%; max-width: 320px;">
+        <input type="text" id="userIn" placeholder="Username">
+        <input type="password" id="passIn" placeholder="Password">
+        <button class="btn-primary" onclick="login()">LOGIN</button>
+        <button class="btn-outline" onclick="register()">REGISTER</button>
+    </div>
+</div>
+
+<div id="unicornModal" class="unicorn-modal">
+    <div class="unicorn-content">
+        <h2 style="text-align: center; margin-bottom: 20px; font-size: 18px;">Edit Account Details</h2>
+        <input type="text" id="newU" placeholder="Change Username">
+        <input type="password" id="newP" placeholder="Change Password">
+        <button class="btn-unicorn" onclick="updateProfile()">SAVE CHANGES</button>
+        <button class="btn-outline" onclick="closeUnicorn()">CANCEL</button>
+    </div>
+</div>
+
+<div id="appUI" style="display: none;">
+    <div style="display: flex; justify-content: space-between; padding: 10px 20px; background: #1e293b; font-size: 12px;">
+        <span>Hi, <strong id="displayUser"></strong> <span style="background:var(--unicorn-grad); padding:2px 6px; border-radius:10px; cursor:pointer;" onclick="openUnicorn()">Edit ✎</span></span>
+        <span style="color: var(--danger); cursor: pointer;" onclick="location.reload()">LOGOUT</span>
+    </div>
+
+    <div class="header">
+        <h1>FAMOUS BAKERY</h1>
+        <h3>Edappadi</h3>
+    </div>
+
+    <div class="card" style="text-align: center;">
+        <span style="color: var(--dim); font-size: 10px; letter-spacing: 1px;">TOTAL BALANCE / இருப்பு</span>
+        <h2 id="totalBal" style="font-size: 42px; margin: 8px 0;">₹ 0</h2>
+    </div>
+
+    <div class="card">
+        <h4 style="margin: 0 0 15px; color: var(--primary); font-size: 12px;">DAILY ENTRY</h4>
+        <input type="number" id="amt" placeholder="Amount / தொகை" inputmode="decimal">
+        <input type="text" id="note" placeholder="Note / குறிப்பு">
+        <select id="mode">
+            <option value="CASH">💰 CASH (ரொக்கம்)</option>
+            <option value="ONLINE">📱 ONLINE (ஆன்லைன்)</option>
+        </select>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button style="background:var(--success); color:white;" onclick="save('IN')">INCOME (+)</button>
+            <button style="background:var(--danger); color:white;" onclick="save('OUT')">OUTCOME (-)</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h4 style="margin: 0 0 15px; color: var(--primary); font-size: 12px;">STAFF MANAGEMENT</h4>
+        <input type="text" id="sName" placeholder="Worker Name">
+        <button class="btn-primary" onclick="addS()">Add Worker</button>
+        <div id="sList" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="card">
+        <h4 style="margin: 0 0 15px; color: var(--primary); font-size: 12px;">TRANSACTION HISTORY</h4>
+        <div id="historyList"></div>
+    </div>
+
+    <div style="padding: 0 20px; text-align: center;">
+        <button class="btn-unicorn" style="padding: 20px;" onclick="generatePDF()">Download Business Report (PDF)</button>
+        <p style="color:var(--danger); font-size:10px; margin-top:30px; cursor:pointer;" onclick="clearAll()">Reset All Data</p>
+    </div>
+</div>
+
+<script>
+    let activeUser = null; let txns = []; let staff = [];
+
+    // Service Worker Register
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); }); }
+
+    // Auth
+    function register() {
+        let u = document.getElementById('userIn').value.trim(); let p = document.getElementById('passIn').value.trim();
+        if(!u || !p) return;
+        let users = JSON.parse(localStorage.getItem('fb_u')) || {};
+        if(users[u]) return alert("Username already taken!");
+        users[u] = p; localStorage.setItem('fb_u', JSON.stringify(users)); alert("Account Registered!");
+    }
+    function login() {
+        let u = document.getElementById('userIn').value.trim(); let p = document.getElementById('passIn').value.trim();
+        let users = JSON.parse(localStorage.getItem('fb_u')) || {};
+        if(users[u] && users[u] === p) {
+            activeUser = u; document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('appUI').style.display = 'block';
+            document.getElementById('displayUser').innerText = u; load();
+        } else { alert("Invalid Credentials!"); }
+    }
+
+    // Unicorn Edit
+    function openUnicorn() { document.getElementById('newU').value = activeUser; document.getElementById('unicornModal').style.display = 'flex'; }
+    function closeUnicorn() { document.getElementById('unicornModal').style.display = 'none'; }
+    function updateProfile() {
+        let nU = document.getElementById('newU').value.trim(), nP = document.getElementById('newP').value.trim();
+        if(!nU || !nP) return;
+        let users = JSON.parse(localStorage.getItem('fb_u'));
+        let oldT = localStorage.getItem('fb_tx_' + activeUser), oldS = localStorage.getItem('fb_st_' + activeUser);
+        delete users[activeUser]; users[nU] = nP; localStorage.setItem('fb_u', JSON.stringify(users));
+        if(oldT) { localStorage.setItem('fb_tx_' + nU, oldT); localStorage.removeItem('fb_tx_' + activeUser); }
+        if(oldS) { localStorage.setItem('fb_st_' + nU, oldS); localStorage.removeItem('fb_st_' + activeUser); }
+        location.reload();
+    }
+
+    // Data
+    function sync() { localStorage.setItem('fb_tx_' + activeUser, JSON.stringify(txns)); localStorage.setItem('fb_st_' + activeUser, JSON.stringify(staff)); render(); }
+    function load() { txns = JSON.parse(localStorage.getItem('fb_tx_' + activeUser)) || []; staff = JSON.parse(localStorage.getItem('fb_st_' + activeUser)) || []; render(); }
+    function save(type) {
+        let a = document.getElementById('amt').value, n = document.getElementById('note').value, m = document.getElementById('mode').value;
+        if(!a) return;
+        txns.push({ id: Date.now(), a: parseFloat(a), n: n || type, t: type, m, dt: new Date().toLocaleString() });
+        document.getElementById('amt').value = ''; document.getElementById('note').value = ''; sync();
+    }
+    function addS() {
+        let n = document.getElementById('sName').value.trim(); if(!n) return;
+        staff.push({ id: Date.now(), n, adv: 0, att: {} }); document.getElementById('sName').value = ''; sync();
+    }
+    function setAtt(id, s) { staff.find(x => x.id === id).att[new Date().toDateString()] = s; sync(); }
+    function upAdv(id, v) { staff.find(x => x.id === id).adv = parseFloat(v) || 0; localStorage.setItem('fb_st_' + activeUser, JSON.stringify(staff)); }
+    function rmS(id) { if(confirm("Remove worker?")) { staff = staff.filter(x => x.id !== id); sync(); } }
+    function clearAll() { if(confirm("Delete all data?")) { localStorage.clear(); location.reload(); } }
+
+    function render() {
+        let bal = 0, tH = "";
+        txns.slice().reverse().forEach(t => {
+            let isIn = t.t === 'IN'; bal += isIn ? t.a : -t.a;
+            tH += `<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border);">
+                <div><strong>${t.n} <span class="badge ${isIn?'badge-income':'badge-outcome'}">${isIn?'Income':'Outcome'}</span></strong>
+                <small style="display:block; font-size:10px; color:var(--dim);">${t.dt} • <span class="badge badge-mode">${t.m}</span></small></div>
+                <div style="color:${isIn?'var(--success)':'var(--danger)'}; font-weight:700;">${isIn?'+':'-'} ₹${t.a}</div>
+            </div>`;
+        });
+        document.getElementById('historyList').innerHTML = tH || "<p style='text-align:center;'>No Data</p>";
+        document.getElementById('totalBal').innerText = "₹ " + bal;
+
+        let sH = "";
+        staff.forEach(s => {
+            let cur = s.att[new Date().toDateString()] || "";
+            sH += `<div class="staff-box">
+                <div style="display:flex;justify-content:space-between;"><strong>${s.n}</strong><span style="color:var(--danger);font-size:10px;cursor:pointer;" onclick="rmS(${s.id})">Remove</span></div>
+                <div style="display:flex;align-items:center;margin:10px 0;"><small>Advance: </small><input type="number" value="${s.adv}" oninput="upAdv(${s.id}, this.value)" style="margin:0 0 0 10px;padding:5px;"></div>
+                <div class="att-grid">
+                    <div class="att-btn ${cur==='P'?'active':''}" onclick="setAtt(${s.id},'P')">P</div>
+                    <div class="att-btn ${cur==='H'?'active':''}" onclick="setAtt(${s.id},'H')">H</div>
+                    <div class="att-btn ${cur==='A'?'active':''}" onclick="setAtt(${s.id},'A')">A</div>
+                </div>
+            </div>`;
+        });
+        document.getElementById('sList').innerHTML = sH;
+    }
+
+    async function generatePDF() {
+        const loader = document.getElementById('loader'); loader.style.display = 'flex';
+        setTimeout(() => {
+            try {
+                const { jsPDF } = window.jspdf; const doc = new jsPDF();
+                doc.setFillColor(2, 6, 23); doc.rect(0, 0, 210, 45, 'F');
+                doc.setTextColor(99, 102, 241); doc.setFontSize(28); doc.text("FAMOUS BAKERY", 105, 20, null, null, "center");
+                doc.setTextColor(255, 255, 255); doc.setFontSize(12); doc.text("EDAPPADI BUSINESS REPORT", 105, 32, null, null, "center");
+                doc.setFontSize(9); doc.text("User: "+activeUser+" | Report Date: "+new Date().toLocaleString(), 105, 40, null, null, "center");
+
+                let tIn = 0, tOut = 0; txns.forEach(t => t.t === 'IN' ? tIn += t.a : tOut += t.a);
+                doc.autoTable({ startY: 50, head: [['Summary', 'Amount']], body: [['Total Income', 'Rs.'+tIn], ['Total Outcome', 'Rs.'+tOut], ['Final Balance', 'Rs.'+(tIn-tOut)]], theme: 'grid', headStyles: {fillColor:[99, 102, 241]} });
+                doc.autoTable({ startY: doc.lastAutoTable.finalY + 10, head: [['Staff Name', 'Advance', 'Today']], body: staff.map(s => [s.n, 'Rs.'+s.adv, s.att[new Date().toDateString()] || '-']), headStyles: {fillColor:[16, 185, 129]} });
+                doc.autoTable({ startY: doc.lastAutoTable.finalY + 10, head: [['Date/Time', 'Note', 'Mode', 'Type', 'Amount']], body: txns.map(t => [t.dt, t.n, t.m, t.t, 'Rs.'+t.a]), headStyles: {fillColor:[31, 41, 55]} });
+                
+                const blob = doc.output('blob'); const url = URL.createObjectURL(blob); const link = document.createElement('a');
+                link.href = url; link.download = `Famous_Bakery_Report.pdf`; link.click(); loader.style.display = 'none';
+            } catch (e) { alert("PDF Generation Failed"); loader.style.display = 'none'; }
+        }, 1000);
+    }
+</script>
+</body>
+</html>
