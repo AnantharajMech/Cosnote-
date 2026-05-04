@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosnote</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Hind:wght@400;600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #020617;
+            --card: #0f172a;
+            --primary: #6366f1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text: #f8fafc;
+            --dim: #94a3b8;
+            --border: #1e293b;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', 'Hind', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+        }
+
+        .container { width: 100%; max-width: 480px; padding-bottom: 60px; }
+
+        /* Branding Header */
+        .header {
+            padding: 50px 20px;
+            text-align: center;
+            background: linear-gradient(180deg, #1e1b4b 0%, var(--bg) 100%);
+        }
+        .header h1 { margin: 0; font-size: 34px; color: var(--text); font-weight: 800; letter-spacing: 4px; }
+        .header p { color: var(--primary); font-size: 12px; margin-top: 5px; font-weight: 600; letter-spacing: 2px; }
+
+        /* Main Balance Display */
+        .balance-card {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            margin: -40px 20px 20px;
+            padding: 35px;
+            border-radius: 30px;
+            text-align: center;
+            border: 1px solid var(--border);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+        }
+        .balance-card h2 { font-size: 46px; margin: 10px 0; font-weight: 800; }
+        .balance-card span { font-size: 11px; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; }
+
+        /* Card Layout */
+        .card { background: var(--card); margin: 0 20px 20px; padding: 25px; border-radius: 26px; border: 1px solid var(--border); }
+        h3 { font-size: 12px; color: var(--primary); text-transform: uppercase; margin-bottom: 18px; letter-spacing: 1.5px; }
+
+        /* Inputs */
+        input, select {
+            width: 100%; background: #020617; border: 1px solid var(--border);
+            padding: 16px; border-radius: 15px; color: white; font-size: 16px;
+            margin-bottom: 12px; box-sizing: border-box; outline: none;
+        }
+
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        button { border: none; padding: 16px; border-radius: 15px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .btn-in { background: var(--success); color: white; }
+        .btn-out { background: var(--danger); color: white; }
+        .btn-primary { background: var(--primary); color: white; width: 100%; }
+
+        /* Staff UI Elements */
+        .staff-item { background: #020617; padding: 18px; border-radius: 22px; margin-bottom: 15px; border: 1px solid var(--border); }
+        .staff-name { font-weight: 700; color: var(--success); font-size: 18px; }
+        .adv-box { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+        .adv-box input { margin: 0; padding: 10px; font-size: 14px; }
+
+        .att-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .att-btn { padding: 11px; border-radius: 12px; font-size: 11px; font-weight: 700; background: #1e293b; color: var(--dim); text-align: center; }
+        .att-btn.active { background: var(--primary); color: white; }
+
+        /* Transaction List */
+        .item { display: flex; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--border); }
+        .item-info strong { display: block; font-size: 15px; }
+        .item-info small { color: var(--dim); font-size: 11px; }
+        .action-btn { font-size: 11px; font-weight: 600; cursor: pointer; margin-left: 10px; text-decoration: underline; }
+
+        /* Processing Loader */
+        #loader {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 6, 23, 0.98); z-index: 9999;
+            flex-direction: column; align-items: center; justify-content: center;
+        }
+        .spin { width: 40px; height: 40px; border: 4px solid #1e293b; border-top: 4px solid var(--primary); border-radius: 50%; animation: s 1s linear infinite; }
+        @keyframes s { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div id="loader"><div class="spin"></div><p style="margin-top: 20px; font-weight: 600; letter-spacing: 2px;">COSNOTE SECURE PDF</p></div>
+
+<div class="container">
+    <div class="header">
+        <h1>COSNOTE</h1>
+        <p id="curDate"></p>
+    </div>
+
+    <div class="balance-card">
+        <span>Available Balance / இருப்பு</span>
+        <h2 id="netDisplay">₹ 0</h2>
+    </div>
+
+    <div class="card" id="form">
+        <h3 id="fLabel">Entry / கணக்கு</h3>
+        <input type="number" id="aI" placeholder="Amount / தொகை" inputmode="decimal">
+        <input type="text" id="nI" placeholder="Details / குறிப்பு">
+        <select id="mI">
+            <option value="CASH">CASH (ரொக்கம்)</option>
+            <option value="ONLINE">ONLINE (ஆன்லைன்)</option>
+        </select>
+        <div id="bGrid" class="btn-row">
+            <button class="btn-in" onclick="add('IN')">IN (+) வரவு</button>
+            <button class="btn-out" onclick="add('OUT')">OUT (-) செலவு</button>
+        </div>
+        <button id="upBtn" class="btn-primary" style="display:none; background:var(--warning); color:#000;" onclick="saveE()">Update Change / சேமி</button>
+    </div>
+
+    <div class="card">
+        <h3>Staff Management / பணியாளர்கள்</h3>
+        <input type="text" id="sN" placeholder="Staff Name / பெயர்">
+        <button class="btn-primary" onclick="addS()">Add Staff / சேர்க்கவும்</button>
+        <div id="sList" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="card">
+        <h3>History / இன்றைய பட்டியல்</h3>
+        <div id="lArea"></div>
+    </div>
+
+    <div style="padding: 0 20px; text-align: center;">
+        <button class="btn-primary" style="background: #334155; padding: 20px; font-size: 16px;" onclick="pdf()">Download Business Report</button>
+        <p style="color:var(--danger); font-size:10px; margin-top:35px; cursor:pointer; opacity: 0.4;" onclick="reset()">Clear All System Data</p>
+    </div>
+</div>
+
+<script>
+    let dbT = JSON.parse(localStorage.getItem('cn_t')) || [];
+    let dbS = JSON.parse(localStorage.getItem('cn_s')) || [];
+    let eId = null;
+
+    document.getElementById('curDate').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    function sync() {
+        localStorage.setItem('cn_t', JSON.stringify(dbT));
+        localStorage.setItem('cn_s', JSON.stringify(dbS));
+        render();
+    }
+
+    function add(t) {
+        let a = parseFloat(document.getElementById('aI').value);
+        let n = document.getElementById('nI').value;
+        let m = document.getElementById('mI').value;
+        if(!a) return;
+        dbT.push({ id: Date.now(), a, n: n || t, t, m, d: new Date().toDateString() });
+        document.getElementById('aI').value = ''; document.getElementById('nI').value = '';
+        sync();
+    }
+
+    function edit(id) {
+        let x = dbT.find(i => i.id === id);
+        eId = id;
+        document.getElementById('aI').value = x.a;
+        document.getElementById('nI').value = x.n;
+        document.getElementById('mI').value = x.m;
+        document.getElementById('upBtn').style.display = 'block';
+        document.getElementById('bGrid').style.display = 'none';
+        document.getElementById('form').scrollIntoView({behavior:'smooth'});
+    }
+
+    function saveE() {
+        let x = dbT.find(i => i.id === eId);
+        x.a = parseFloat(document.getElementById('aI').value);
+        x.n = document.getElementById('nI').value;
+        x.m = document.getElementById('mI').value;
+        eId = null;
+        document.getElementById('upBtn').style.display = 'none';
+        document.getElementById('bGrid').style.display = 'grid';
+        document.getElementById('aI').value = ''; document.getElementById('nI').value = '';
+        sync();
+    }
+
+    function del(id) { if(confirm("நீக்கலாமா?")) { dbT = dbT.filter(i => i.id !== id); sync(); } }
+
+    function addS() {
+        let n = document.getElementById('sN').value.trim();
+        if(!n) return;
+        dbS.push({ id: Date.now(), n, ad: 0, at: {} });
+        document.getElementById('sN').value = '';
+        sync();
+    }
+
+    function upAd(id, v) { dbS.find(x => x.id === id).ad = parseFloat(v) || 0; localStorage.setItem('cn_s', JSON.stringify(dbS)); }
+    function stAt(id, s) { dbS.find(x => x.id === id).at[new Date().toDateString()] = s; sync(); }
+    function rmS(id) { if(confirm("Remove?")) { dbS = dbS.filter(x => x.id !== id); sync(); } }
+
+    function render() {
+        let today = new Date().toDateString();
+        let bal = 0;
+        let lH = "";
+        dbT.filter(i => i.d === today).reverse().forEach(i => {
+            let isIn = i.t === 'IN';
+            bal += isIn ? i.a : -i.a;
+            lH += `<div class="item">
+                <div class="item-info"><strong>${i.n}</strong><small>${i.m} • ${isIn?'In':'Out'}</small></div>
+                <div style="text-align:right">
+                    <div style="color:${isIn?'var(--success)':'var(--danger)'}; font-weight:700;">${isIn?'+':'-'} ₹${i.a}</div>
+                    <span class="action-btn" style="color:var(--warning)" onclick="edit(${i.id})">Edit</span>
+                    <span class="action-btn" style="color:var(--danger)" onclick="del(${i.id})">Del</span>
+                </div>
+            </div>`;
+        });
+        document.getElementById('lArea').innerHTML = lH || "<p style='text-align:center;color:var(--dim);font-size:12px;'>No records today</p>";
+        document.getElementById('netDisplay').innerText = "₹ " + bal;
+
+        let sH = "";
+        dbS.forEach(s => {
+            let cur = s.at[today] || "";
+            sH += `<div class="staff-item">
+                <div style="display:flex; justify-content:space-between"><span class="staff-name">${s.n}</span><span class="action-btn" style="color:var(--danger)" onclick="rmS(${s.id})">Del</span></div>
+                <div class="adv-box"><small>Advance:</small><input type="number" value="${s.ad}" oninput="upAd(${s.id}, this.value)"></div>
+                <div class="att-grid">
+                    <div class="att-btn ${cur==='P'?'active':''}" onclick="stAt(${s.id}, 'P')">P</div>
+                    <div class="att-btn ${cur==='H'?'active':''}" onclick="stAt(${s.id}, 'H')">H</div>
+                    <div class="att-btn ${cur==='A'?'active':''}" onclick="stAt(${s.id}, 'A')">A</div>
+                </div>
+            </div>`;
+        });
+        document.getElementById('sList').innerHTML = sH;
+    }
+
+    async function pdf() {
+        const load = document.getElementById('loader');
+        load.style.display = 'flex';
+        setTimeout(() => {
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.setFillColor(2, 6, 23); doc.rect(0, 0, 210, 45, 'F');
+                doc.setTextColor(99, 102, 241); doc.setFontSize(30); doc.text("COSNOTE", 105, 25, null, null, "center");
+                doc.setTextColor(255, 255, 255); doc.setFontSize(10); doc.text("BUSINESS EXECUTIVE REPORT", 105, 35, null, null, "center");
+                
+                let inT = 0, outT = 0;
+                dbT.forEach(i => i.t === 'IN' ? inT += i.a : outT += i.a);
+                doc.autoTable({ startY: 55, head: [['Summary', 'Amount']], body: [['Income', inT], ['Expense', outT], ['Balance', inT - outT]], headStyles: {fillColor: [99, 102, 241]} });
+                doc.autoTable({ startY: doc.lastAutoTable.finalY + 10, head: [['Staff Name', 'Advance', 'Today']], body: dbS.map(s => [s.n, 'Rs.'+s.ad, s.at[new Date().toDateString()] || '-']), headStyles: {fillColor: [16, 185, 129]} });
+                doc.autoTable({ startY: doc.lastAutoTable.finalY + 10, head: [['Date', 'Particulars', 'Mode', 'Amt']], body: dbT.slice(-100).map(i => [i.d, i.n, i.m, i.a]), headStyles: {fillColor: [31, 41, 55]} });
+                
+                const b = doc.output('blob');
+                const u = URL.createObjectURL(b);
+                const l = document.createElement('a'); l.href = u; l.download = `Cosnote_Report.pdf`;
+                document.body.appendChild(l); l.click(); document.body.removeChild(l);
+                load.style.display = 'none';
+            } catch (e) { alert("Use Chrome Browser"); load.style.display = 'none'; }
+        }, 1000);
+    }
+
+    function reset() { if(confirm("அனைத்தும் அழியும். தொடரலாமா?")) { localStorage.clear(); location.reload(); } }
+    render();
+</script>
+
+</body>
+</html>
